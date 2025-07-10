@@ -1,0 +1,20 @@
+{
+    "name": "magedin/module-chatgpt",
+    "description": "N/A",
+    "type": "magento2-module",
+    "require": {
+        "magento/framework": "*",
+        "magedin/module-ai": ""
+    },
+    "license": [
+        ""
+    ],
+    "autoload": {
+        "files": [
+            "registration.php"
+        ],
+        "psr-4": {
+            "MagedIn\\AiChatGpt\\": ""
+        }
+    }
+}
