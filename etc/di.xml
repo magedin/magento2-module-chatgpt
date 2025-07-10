@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © MagedIn. All rights reserved.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <!-- Register ChatGPT adapter in AI Providers Pool -->
+    <type name="MagedIn\Ai\Model\AiProvidersPool">
+        <arguments>
+            <argument name="providers" xsi:type="array">
+                <item name="chatgpt" xsi:type="array">
+                    <item name="label" xsi:type="string">ChatGPT</item>
+                    <item name="class" xsi:type="string">MagedIn\ChatGpt\Model\ChatGptAdapter</item>
+                </item>
+            </argument>
+        </arguments>
+    </type>
+</config>
