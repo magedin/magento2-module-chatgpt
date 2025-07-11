@@ -11,6 +11,7 @@ use MagedIn\Ai\Api\Data\AiRequestInterface;
 use MagedIn\Ai\Api\Data\AiResponseInterface;
 use MagedIn\Ai\Api\Data\AiResponseInterfaceFactory;
 use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\Encryption\EncryptorInterface;
 use Magento\Framework\HTTP\ClientInterface;
 use Magento\Framework\Serialize\Serializer\Json;
 use Psr\Log\LoggerInterface;
@@ -59,6 +60,7 @@ class ChatGptAdapter implements AiProviderAdapterInterface
      * @var LoggerInterface
      */
     private LoggerInterface $logger;
+    private EncryptorInterface $encryptor;
 
     /**
      * @param ScopeConfigInterface $scopeConfig
@@ -66,19 +68,22 @@ class ChatGptAdapter implements AiProviderAdapterInterface
      * @param Json $jsonSerializer
      * @param AiResponseInterfaceFactory $aiResponseFactory
      * @param LoggerInterface $logger
+     * @param EncryptorInterface $encryptor
      */
     public function __construct(
         ScopeConfigInterface $scopeConfig,
         ClientInterface $httpClient,
         Json $jsonSerializer,
         AiResponseInterfaceFactory $aiResponseFactory,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        EncryptorInterface $encryptor
     ) {
         $this->scopeConfig = $scopeConfig;
         $this->httpClient = $httpClient;
         $this->jsonSerializer = $jsonSerializer;
         $this->aiResponseFactory = $aiResponseFactory;
         $this->logger = $logger;
+        $this->encryptor = $encryptor;
     }
 
     /**
@@ -170,10 +175,12 @@ class ChatGptAdapter implements AiProviderAdapterInterface
      */
     private function getApiKey(): ?string
     {
-        return $this->scopeConfig->getValue(
+        $encryptedValue = $this->scopeConfig->getValue(
             self::CONFIG_API_KEY,
             ScopeInterface::SCOPE_STORE
         );
+        $apiKey = $this->encryptor->decrypt($encryptedValue);
+        return !empty($apiKey) ? $apiKey : null;
     }
 
     /**
