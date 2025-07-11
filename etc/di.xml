@@ -6,6 +6,9 @@
 -->
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <!-- Interface preferences -->
+    <preference for="MagedIn\ChatGpt\Api\ConfigInterface" type="MagedIn\ChatGpt\Model\Config" />
+
     <!-- Register ChatGPT adapter in AI Providers Pool -->
     <type name="MagedIn\Ai\Model\AiProvidersPool">
         <arguments>
