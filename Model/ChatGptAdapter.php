@@ -10,12 +10,10 @@ use MagedIn\Ai\Api\AiProviderAdapterInterface;
 use MagedIn\Ai\Api\Data\AiRequestInterface;
 use MagedIn\Ai\Api\Data\AiResponseInterface;
 use MagedIn\Ai\Api\Data\AiResponseInterfaceFactory;
-use Magento\Framework\App\Config\ScopeConfigInterface;
-use Magento\Framework\Encryption\EncryptorInterface;
+use MagedIn\ChatGpt\Api\ConfigInterface;
 use Magento\Framework\HTTP\ClientInterface;
 use Magento\Framework\Serialize\Serializer\Json;
 use Psr\Log\LoggerInterface;
-use Magento\Store\Model\ScopeInterface;
 
 /**
  * ChatGPT AI Provider Adapter
@@ -28,18 +26,10 @@ class ChatGptAdapter implements AiProviderAdapterInterface
     private const PROVIDER_NAME = 'chatgpt';
     private const API_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
 
-    private const CONFIG_API_KEY = 'magedin_ai/chatgpt/api_key';
-    private const CONFIG_MODEL = 'magedin_ai/chatgpt/model';
-    private const CONFIG_ENABLED = 'magedin_ai/chatgpt/enabled';
-
-    private const DEFAULT_MODEL = 'gpt-3.5-turbo';
-    private const DEFAULT_MAX_TOKENS = 1000;
-    private const DEFAULT_TEMPERATURE = 0.7;
-
     /**
-     * @var ScopeConfigInterface
+     * @var ConfigInterface
      */
-    private ScopeConfigInterface $scopeConfig;
+    private ConfigInterface $config;
 
     /**
      * @var ClientInterface
@@ -60,30 +50,26 @@ class ChatGptAdapter implements AiProviderAdapterInterface
      * @var LoggerInterface
      */
     private LoggerInterface $logger;
-    private EncryptorInterface $encryptor;
 
     /**
-     * @param ScopeConfigInterface $scopeConfig
+     * @param ConfigInterface $config
      * @param ClientInterface $httpClient
      * @param Json $jsonSerializer
      * @param AiResponseInterfaceFactory $aiResponseFactory
      * @param LoggerInterface $logger
-     * @param EncryptorInterface $encryptor
      */
     public function __construct(
-        ScopeConfigInterface $scopeConfig,
+        ConfigInterface $config,
         ClientInterface $httpClient,
         Json $jsonSerializer,
         AiResponseInterfaceFactory $aiResponseFactory,
-        LoggerInterface $logger,
-        EncryptorInterface $encryptor
+        LoggerInterface $logger
     ) {
-        $this->scopeConfig = $scopeConfig;
+        $this->config = $config;
         $this->httpClient = $httpClient;
         $this->jsonSerializer = $jsonSerializer;
         $this->aiResponseFactory = $aiResponseFactory;
         $this->logger = $logger;
-        $this->encryptor = $encryptor;
     }
 
     /**
@@ -95,7 +81,7 @@ class ChatGptAdapter implements AiProviderAdapterInterface
         $response->setProvider(self::PROVIDER_NAME);
 
         try {
-            $apiKey = $this->getApiKey();
+            $apiKey = $this->config->getApiKey();
             if (!$apiKey) {
                 throw new \Exception('ChatGPT API key is not configured');
             }
@@ -138,7 +124,7 @@ class ChatGptAdapter implements AiProviderAdapterInterface
      */
     public function isAvailable(): bool
     {
-        return $this->isEnabled() && !empty($this->getApiKey());
+        return $this->config->isConfigured();
     }
 
     /**
@@ -155,46 +141,6 @@ class ChatGptAdapter implements AiProviderAdapterInterface
         ];
     }
 
-    /**
-     * Check if ChatGPT is enabled in configuration
-     *
-     * @return bool
-     */
-    private function isEnabled(): bool
-    {
-        return (bool) $this->scopeConfig->getValue(
-            self::CONFIG_ENABLED,
-            ScopeInterface::SCOPE_STORE
-        );
-    }
-
-    /**
-     * Get API key from configuration
-     *
-     * @return string|null
-     */
-    private function getApiKey(): ?string
-    {
-        $encryptedValue = $this->scopeConfig->getValue(
-            self::CONFIG_API_KEY,
-            ScopeInterface::SCOPE_STORE
-        );
-        $apiKey = $this->encryptor->decrypt($encryptedValue);
-        return !empty($apiKey) ? $apiKey : null;
-    }
-
-    /**
-     * Get configured model or default
-     *
-     * @return string
-     */
-    private function getModel(): string
-    {
-        return $this->scopeConfig->getValue(
-            self::CONFIG_MODEL,
-            ScopeInterface::SCOPE_STORE
-        ) ?: self::DEFAULT_MODEL;
-    }
 
     /**
      * Prepare request data for ChatGPT API
@@ -205,15 +151,15 @@ class ChatGptAdapter implements AiProviderAdapterInterface
     private function prepareRequestData(AiRequestInterface $request): array
     {
         $data = [
-            'model' => $this->getModel(),
+            'model' => $this->config->getModel(),
             'messages' => [
                 [
                     'role' => 'user',
                     'content' => $request->getMessage()
                 ]
             ],
-            'max_tokens' => $request->getMaxTokens() ?: self::DEFAULT_MAX_TOKENS,
-            'temperature' => $request->getTemperature() ?: self::DEFAULT_TEMPERATURE
+            'max_tokens' => $request->getMaxTokens() ?: $this->config->getDefaultMaxTokens(),
+            'temperature' => $request->getTemperature() ?: $this->config->getDefaultTemperature()
         ];
 
         // Add context if provided
