@@ -14,6 +14,13 @@
     <!-- Interface preferences -->
     <preference for="MagedIn\ChatGpt\Api\ConfigInterface" type="MagedIn\ChatGpt\Model\Config" />
 
+    <virtualType name="MagedIn\ChatGpt\Block\Adminhtml\Form\Element\VersionLabel"
+                 type="MagedIn\Framework\Magento2\Block\Form\Element\VersionLabel">
+        <arguments>
+            <argument name="packageName" xsi:type="string">magedin/module-chatgpt</argument>
+        </arguments>
+    </virtualType>
+
     <!-- Register ChatGPT adapter in AI Providers Pool -->
     <type name="MagedIn\Ai\Model\AiProvidersPool">
         <arguments>
